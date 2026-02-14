@@ -1,0 +1,21 @@
+{
+    "name": "WindowViewProvider",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:0aaa76cdd06e6834896ae92cbeeb814c",
+        "GUID:c9d1db9a67930754995efdf69b76db27",
+        "GUID:aa167da4f1e0aeb418e80525ec3600e2",
+        "GUID:f8767451f6272f04882dbd5354ca87b4",
+        "GUID:83fd82bd90ed86e4abae64649cb54d32"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
