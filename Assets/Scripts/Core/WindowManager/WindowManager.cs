@@ -37,7 +37,6 @@ namespace Core.WindowManager
         {
             if (_windowFactoriesByViewName.TryGetValue(viewName, out IWindowFactory windowFactory) == false)
             {
-                // _dualLogger.Mandatory.LogError($"Window factory with ViewName {viewName} not found");
                 return;
             }
 
@@ -93,13 +92,18 @@ namespace Core.WindowManager
         {
             if (_windowPresentersByModel.TryGetValue(model, out IWindowPresenter windowPresenter) == false)
             {
-                // _dualLogger.Mandatory.LogError(
-                // $"Trying to hide a window by {nameof(model)} model that had never been shown before");
-
                 return;
             }
 
             windowPresenter.SetShown(false);
+        }
+
+        public void HideAllWindows()
+        {
+            foreach (IWindowPresenter windowPresenter in _windowPresentersByModel.Values)
+            {
+                windowPresenter.SetShown(false);
+            }
         }
 
         private void ShowWindow<TView, TModel>(

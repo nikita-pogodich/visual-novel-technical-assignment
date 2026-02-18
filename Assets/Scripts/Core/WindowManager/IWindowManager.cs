@@ -15,5 +15,6 @@ namespace Core.WindowManager
             where TModel : IModel;
 
         void HideWindow(IModel model);
+        void HideAllWindows();
     }
 }

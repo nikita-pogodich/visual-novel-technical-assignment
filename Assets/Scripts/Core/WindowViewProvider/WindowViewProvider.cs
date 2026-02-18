@@ -45,15 +45,11 @@ namespace Core.WindowViewProvider
 
             if (view == null)
             {
-                // _dualLogger.Mandatory.LogError($"Failed to get view with resourceKey {resourceKey}");
                 return default;
             }
 
             if (view is not BaseView baseView)
             {
-                // _dualLogger.Mandatory.LogError(
-                    // $"Failed to get {view.GetType()}. {nameof(WindowViewProvider)} can create only {nameof(BaseView)}");
-
                 return default;
             }
 
@@ -68,15 +64,11 @@ namespace Core.WindowViewProvider
 
             if (view == null)
             {
-                // _dualLogger.Mandatory.LogError($"Failed to get view with resourceKey {resourceKey}");
                 return default;
             }
 
             if (view is not BaseView baseView)
             {
-                // _dualLogger.Mandatory.LogError(
-                    // $"Failed to get {view.GetType()}. {nameof(WindowViewProvider)} can create only {nameof(BaseView)}");
-
                 return default;
             }
 

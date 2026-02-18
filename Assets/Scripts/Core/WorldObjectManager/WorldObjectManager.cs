@@ -35,7 +35,6 @@ namespace Core.WorldObjectManager
                     viewName,
                     out IWorldObjectFactory worldObjectFactory) == false)
             {
-                // _dualLogger.Mandatory.LogError($"WorldObjectFactory by ViewName {viewName} not found");
                 await UniTask.CompletedTask;
                 return;
             }
@@ -43,9 +42,6 @@ namespace Core.WorldObjectManager
             IWorldObjectPresenter presenter = await worldObjectFactory.CreateAsync<TPresenter, TView, TModel>(model);
             if (presenter is not IWorldObjectPresenter<TView, TModel> worldObjectPresenter)
             {
-                // _dualLogger.Mandatory.LogError(
-                // $"Cannot cast {nameof(presenter)} into {nameof(IWorldObjectPresenter<TView, TModel>)}");
-
                 await UniTask.CompletedTask;
                 return;
             }
@@ -60,7 +56,6 @@ namespace Core.WorldObjectManager
         {
             if (_presentersByModel.TryGetValue(model, out IPresenter presenter) == false)
             {
-                // _dualLogger.Mandatory.LogError($"World Object Presenter by model {nameof(model)} not found");
                 return;
             }
 
@@ -74,7 +69,6 @@ namespace Core.WorldObjectManager
                     viewName,
                     out IWorldObjectFactory worldObjectFactory) == false)
             {
-                // _dualLogger.Mandatory.LogError($"WorldObjectFactory by ViewName {viewName} not found");
                 return;
             }
 

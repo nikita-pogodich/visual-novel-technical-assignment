@@ -1,9 +1,13 @@
-﻿using Core.ResourcesManager;
-using Core.WindowManager;
-using Core.WorldObjectManager;
+﻿using System.Collections.Generic;
+using System.IO;
+using Core.ModelProvider;
+using Core.SaveStore;
 using Cysharp.Threading.Tasks;
+using Features.ChoiceWindow;
 using Features.DialogueWindow;
 using Features.MainMenu;
+using Features.Narrative;
+using Features.SaveLoad;
 using Settings;
 using UnityEngine;
 using ViewInterfaces;
@@ -15,22 +19,91 @@ namespace Core.GameBootstrap
         [SerializeField]
         private LocalSettings _localSettings;
 
-        private readonly IWindowManager _windowManager = new WindowManager.WindowManager();
-        private readonly IResourcesManager _resourcesManager = new ResourcesManager.ResourcesManager();
-        private readonly IWorldObjectManager _worldObjectManager = new WorldObjectManager.WorldObjectManager();
+        [SerializeField]
+        private TextAsset _story;
+
+        private readonly WindowManager.WindowManager _windowManager = new();
+        private readonly IModelProvider _modelProvider = new SimpleModelProvider();
+        private readonly ResourcesManager.ResourcesManager _resourcesManager = new();
+        private NarrativeController _narrativeController;
 
         private void Start()
         {
+            InitAsync().Forget();
+        }
+
+        private void OnDestroy()
+        {
+            _windowManager.Dispose();
+            _narrativeController.Deinit();
+        }
+
+        private async UniTaskVoid InitAsync()
+        {
+            await _resourcesManager.InitializeAsync(destroyCancellationToken);
+
             var viewProvider = new ViewProvider.ViewProvider(_resourcesManager);
             var windowViewProvider = new WindowViewProvider.WindowViewProvider(
                 _localSettings,
                 _resourcesManager,
                 viewProvider);
 
-            var mainMenuWindowFactory = new MainMenuWindowFactory(windowViewProvider, _localSettings);
+            await windowViewProvider.InitializeAsync(destroyCancellationToken);
+
+            List<CharacterData> allCharactersData = new();
+            foreach (CharacterSetting characterSetting in _localSettings.CharacterSettings.Characters)
+            {
+                allCharactersData.Add(
+                    new CharacterData(
+                        characterSetting.CharacterId,
+                        characterSetting.DisplayName,
+                        characterSetting.InkEntryPath));
+            }
+
+            var narrativeEngine = new InkNarrativeEngine();
+            var narrativeModel = new NarrativeModel(allCharactersData, narrativeEngine);
+
+            string rootDir = Path.Combine(Application.persistentDataPath, "Saves");
+            ISaveStore saveStore = new JsonFileSaveStore(rootDir);
+
+            var saveLoadManager = new SaveLoadManager(narrativeModel, narrativeEngine, saveStore);
+
+            _narrativeController = new NarrativeController(
+                viewProvider,
+                _windowManager,
+                _localSettings,
+                _resourcesManager,
+                saveLoadManager,
+                narrativeModel,
+                _story.text);
+
+            _narrativeController.Init();
+
+            var mainMenuWindowFactory = new MainMenuWindowFactory(
+                _narrativeController,
+                windowViewProvider,
+                _modelProvider,
+                _localSettings);
+
             _windowManager.RegisterWindowFactory(mainMenuWindowFactory);
 
-            var dialogueWindowFactory = new DialogueWindowFactory(windowViewProvider, _localSettings);
+            var choiceWindowModel = new ChoiceWindowModel(_modelProvider, narrativeModel, _modelProvider.GetUniqueId());
+            var choiceWindowFactory = new ChoiceWindowFactory(
+                windowViewProvider,
+                viewProvider,
+                _localSettings,
+                choiceWindowModel);
+
+            _windowManager.RegisterWindowFactory(choiceWindowFactory);
+
+            var dialogueWindowFactory = new DialogueWindowFactory(
+                _windowManager,
+                windowViewProvider,
+                _localSettings,
+                _narrativeController,
+                narrativeModel,
+                choiceWindowModel);
+
             _windowManager.RegisterWindowFactory(dialogueWindowFactory);
 
             ShowStartWindowAsync().Forget();

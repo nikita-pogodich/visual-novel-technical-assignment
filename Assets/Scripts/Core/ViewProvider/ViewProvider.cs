@@ -39,14 +39,11 @@ namespace Core.ViewProvider
         {
             if (view == null)
             {
-                // _dualLogger.Mandatory.LogError("Trying to release null view");
                 return;
             }
 
             if (view is not BaseView baseView)
             {
-                // _dualLogger.Mandatory.LogError(
-                    // $"Trying to release {view.GetType()}. {nameof(ViewProvider)} can release only {nameof(BaseView)}");
                 return;
             }
 

@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using Core.MVPImplementation;
 using Core.ViewProvider;
+using Core.WindowManager;
+using Features.DialogueWindow;
+using Features.Narrative;
 using R3;
 using Settings;
 using UnityEngine;
@@ -23,9 +26,29 @@ namespace Features.ChoiceWindow.ChoicesList
             _localSettings = localSettings;
         }
 
+        public void UpdateChoicesList()
+        {
+            ClearChoicesList();
+
+            foreach (ChoiceListItemModel choiceListItemModel in Model.ChoiceModelsByIndex.Values)
+            {
+                IChoiceListItemView choiceListItemView =
+                    _viewProvider.Get<IChoiceListItemView>(_localSettings.ViewNames.ChoiceListItemView);
+                choiceListItemView.Init(_localSettings.ViewNames.ChoiceListItemView);
+
+                var choicesListItemPresenter = new ChoiceListItemPresenter();
+                choicesListItemPresenter.Init(choiceListItemView, choiceListItemModel);
+
+                _choiceListItemPresenters.Add(choicesListItemPresenter);
+                AddChildPresenter(choicesListItemPresenter);
+
+                View.AddItem(choiceListItemView);
+            }
+        }
+
         protected override void OnInit(ref DisposableBuilder disposableBuilder)
         {
-            CreateChoicesList();
+            //TODO: get this InputAction from some InputManager
             _submitInputAction = InputSystem.actions.FindAction("Submit");
             _navigateInputAction = InputSystem.actions.FindAction("Navigate");
             _submitInputAction.performed += OnSubmit;
@@ -37,23 +60,6 @@ namespace Features.ChoiceWindow.ChoicesList
             ClearChoicesList();
             _submitInputAction.performed -= OnSubmit;
             _navigateInputAction.performed -= OnNavigate;
-        }
-
-        private void CreateChoicesList()
-        {
-            foreach (ChoiceListItemModel choiceListItemModel in Model.ChoiceModelsByIndex.Values)
-            {
-                IChoiceListItemView choiceListItemView =
-                    _viewProvider.Get<IChoiceListItemView>(_localSettings.ViewNames.ChoiceListItemView);
-
-                var choicesListItemPresenter = new ChoiceListItemPresenter();
-                choicesListItemPresenter.Init(choiceListItemView, choiceListItemModel);
-
-                _choiceListItemPresenters.Add(choicesListItemPresenter);
-                AddChildPresenter(choicesListItemPresenter);
-
-                View.AddItem(choiceListItemView);
-            }
         }
 
         private void ClearChoicesList()

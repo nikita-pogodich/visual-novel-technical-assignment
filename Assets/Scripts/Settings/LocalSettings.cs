@@ -15,7 +15,11 @@ namespace Settings
         [SerializeField]
         private ResourceNames _resourceNames;
 
+        [SerializeField]
+        public CharacterSettings _characterSettings;
+
         public IViewNames ViewNames => _viewNames;
+        public ICharacterSettings CharacterSettings => _characterSettings;
         public IResourceNames ResourceNames => _resourceNames;
     }
 }

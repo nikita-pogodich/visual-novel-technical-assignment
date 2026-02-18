@@ -73,6 +73,7 @@ namespace Core.ResourcesManager
             if (_pool.ContainsKey(resourceKey) == true && _pool[resourceKey].Count > 0)
             {
                 result = _pool[resourceKey].Pop();
+                result.transform.SetParent(parent);
             }
             else
             {
