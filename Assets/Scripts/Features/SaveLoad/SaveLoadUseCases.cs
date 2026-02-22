@@ -8,10 +8,11 @@ namespace Features.SaveLoad
         public static SaveData ToSaveData(NarrativeModel narrativeModel)
         {
             var saveData = new SaveData();
-            saveData.Mode = narrativeModel.Mode.ToString();
-            saveData.ActiveCharacterId = narrativeModel.ActiveCharacter;
+            saveData.Mode = narrativeModel.CurrentMode.ToString();
+            saveData.ActiveCharacterId = narrativeModel.ActiveCharacterId;
             saveData.SpeakerKey = narrativeModel.CurrentSpeakerKey;
             saveData.BackgroundKey = narrativeModel.CurrentBackgroundKey;
+            saveData.EndingKey = narrativeModel.CurrentEndingKey;
             saveData.LineText = narrativeModel.CurrentLineText;
             saveData.NarrativeStateJson = narrativeModel.NarrativeStateJson;
 
@@ -30,7 +31,7 @@ namespace Features.SaveLoad
                 narrativeModel.BeginConversation(data.ActiveCharacterId);
             }
 
-            narrativeModel.ApplyTagEffects(data.SpeakerKey, data.BackgroundKey);
+            narrativeModel.ApplyTagEffects(data.SpeakerKey, data.BackgroundKey, data.EndingKey);
             narrativeModel.ApplyLine(data.LineText);
             narrativeModel.CaptureNarrativeState(data.NarrativeStateJson);
 

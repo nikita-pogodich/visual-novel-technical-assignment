@@ -7,26 +7,29 @@ namespace Features.Narrative
     {
         private readonly INarrativeEngine _narrativeEngine;
 
-        private readonly Dictionary<string, CharacterData> _talkTargetsById = new();
-        private readonly List<ChoiceData> _choices = new();
+        private readonly Dictionary<string, CharacterData> _currentTalkTargetsById = new();
+        private readonly List<ChoiceData> _currentChoices = new();
 
-        public WorldMode Mode { get; private set; }
-        public string ActiveCharacter { get; private set; }
+        public WorldMode CurrentMode { get; private set; }
+        public string ActiveCharacterId { get; private set; }
         public string CurrentSpeakerKey { get; private set; }
         public string CurrentBackgroundKey { get; private set; }
+        public string CurrentEndingKey { get; private set; }
         public string CurrentLineText { get; private set; }
         public string NarrativeStateJson { get; private set; }
+        public IReadOnlyDictionary<string, CharacterData> CurrentTalkTargetsById => _currentTalkTargetsById;
+        public IReadOnlyList<ChoiceData> CurrentChoices => _currentChoices;
 
         public NarrativeModel(IEnumerable<CharacterData> initialTargets, INarrativeEngine narrativeEngine)
         {
             _narrativeEngine = narrativeEngine;
 
-            Mode = WorldMode.CharacterSelect;
+            CurrentMode = WorldMode.CharacterSelect;
             foreach (CharacterData character in initialTargets)
             {
                 if (character != null)
                 {
-                    _talkTargetsById.Add(character.Id, character);
+                    _currentTalkTargetsById.Add(character.Id, character);
                 }
             }
         }
@@ -39,22 +42,9 @@ namespace Features.Narrative
             StepUntilLineOrChoice();
         }
 
-        public DialogueSnapshot GetSnapshot()
-        {
-            return new DialogueSnapshot(
-                Mode,
-                ActiveCharacter,
-                CurrentSpeakerKey,
-                CurrentBackgroundKey,
-                CurrentLineText,
-                _choices,
-                _talkTargetsById
-            );
-        }
-
         public void StartConversation(string characterId)
         {
-            if (_talkTargetsById.TryGetValue(characterId, out CharacterData target) == false)
+            if (_currentTalkTargetsById.TryGetValue(characterId, out CharacterData target) == false)
             {
                 throw new InvalidOperationException("Character not found: " + characterId);
             }
@@ -62,6 +52,7 @@ namespace Features.Narrative
             BeginConversation(characterId);
 
             _narrativeEngine.ChoosePath(target.InkEntryPath);
+            StepUntilLineOrChoice();
             StepUntilLineOrChoice();
         }
 
@@ -76,17 +67,12 @@ namespace Features.Narrative
             StepUntilLineOrChoice();
         }
 
-        private void EnterCharacterSelect(bool preserveLine)
+        private void EnterCharacterSelect()
         {
-            Mode = WorldMode.CharacterSelect;
-            ActiveCharacter = null;
+            CurrentMode = WorldMode.CharacterSelect;
+            ActiveCharacterId = null;
 
-            if (!preserveLine)
-            {
-                CurrentLineText = null;
-            }
-
-            _choices.Clear();
+            _currentChoices.Clear();
         }
 
         private void StepUntilLineOrChoice()
@@ -98,12 +84,11 @@ namespace Features.Narrative
             {
                 ApplyChoicesFromNarrativeEngine(choices);
 
-                if (LooksLikeCharacterSelectChoices(choices))
+                if (HasCharacterSelectionChoices(choices))
                 {
                     SetMode(WorldMode.CharacterSelect);
                 }
 
-                CaptureRuntimeState();
                 return;
             }
 
@@ -116,7 +101,7 @@ namespace Features.Narrative
                 }
 
                 TagEffects effects = InkTagParser.Parse(line.Tags);
-                ApplyTagEffects(effects.SpeakerKey, effects.BackgroundKey);
+                ApplyTagEffects(effects.SpeakerKey, effects.BackgroundKey, effects.EndingKey);
                 ApplyModeFromTags(effects.Mode);
                 ApplyLine(line.Text);
 
@@ -125,24 +110,16 @@ namespace Features.Narrative
                 {
                     ApplyChoicesFromNarrativeEngine(choices);
 
-                    if (LooksLikeCharacterSelectChoices(choices))
+                    if (HasCharacterSelectionChoices(choices))
                     {
                         SetMode(WorldMode.CharacterSelect);
                     }
                 }
 
-                bool noChoices = choices == null || choices.Count == 0;
-                if (!_narrativeEngine.CanContinue && noChoices)
-                {
-                    EnterCharacterSelect(preserveLine: true);
-                }
-
-                CaptureRuntimeState();
                 return;
             }
 
-            EnterCharacterSelect(preserveLine: false);
-            CaptureRuntimeState();
+            EnterCharacterSelect();
         }
 
         private void ApplyChoicesFromNarrativeEngine(IReadOnlyList<NarrativeChoice> choicesFromNarrativeEngine)
@@ -157,17 +134,12 @@ namespace Features.Narrative
             ApplyChoices(choices);
         }
 
-        private void CaptureRuntimeState()
-        {
-            CaptureNarrativeState(_narrativeEngine.GetStateJson());
-        }
-
         public void BeginConversation(string characterId)
         {
-            Mode = WorldMode.InConversation;
-            ActiveCharacter = characterId;
+            CurrentMode = WorldMode.InConversation;
+            ActiveCharacterId = characterId;
             CurrentLineText = null;
-            _choices.Clear();
+            _currentChoices.Clear();
         }
 
         public void ApplyLine(string lineText)
@@ -177,7 +149,7 @@ namespace Features.Narrative
 
         public void ApplyChoices(IEnumerable<ChoiceData> choices)
         {
-            _choices.Clear();
+            _currentChoices.Clear();
             if (choices == null)
             {
                 return;
@@ -187,12 +159,12 @@ namespace Features.Narrative
             {
                 if (choice != null)
                 {
-                    _choices.Add(choice);
+                    _currentChoices.Add(choice);
                 }
             }
         }
 
-        public void ApplyTagEffects(string speakerKey, string backgroundKey)
+        public void ApplyTagEffects(string speakerKey, string backgroundKey, string endingKey)
         {
             if (string.IsNullOrWhiteSpace(speakerKey) == false)
             {
@@ -202,6 +174,11 @@ namespace Features.Narrative
             if (string.IsNullOrWhiteSpace(backgroundKey) == false)
             {
                 CurrentBackgroundKey = backgroundKey;
+            }
+
+            if (string.IsNullOrWhiteSpace(endingKey) == false)
+            {
+                CurrentEndingKey = endingKey;
             }
         }
 
@@ -220,22 +197,18 @@ namespace Features.Narrative
 
         private void SetMode(WorldMode mode)
         {
-            Mode = mode;
+            CurrentMode = mode;
 
-            if (Mode == WorldMode.CharacterSelect)
+            if (CurrentMode == WorldMode.CharacterSelect)
             {
-                ActiveCharacter = null;
+                ActiveCharacterId = null;
             }
         }
 
-        private bool LooksLikeCharacterSelectChoices(IReadOnlyList<NarrativeChoice> engineChoices)
+        private bool HasCharacterSelectionChoices(IReadOnlyList<NarrativeChoice> engineChoices)
         {
-            if (engineChoices == null || engineChoices.Count == 0)
-            {
-                return false;
-            }
-
-            if (engineChoices.Count != _talkTargetsById.Count)
+            if (engineChoices == null || engineChoices.Count == 0 ||
+                engineChoices.Count != _currentTalkTargetsById.Count)
             {
                 return false;
             }
@@ -249,7 +222,7 @@ namespace Features.Narrative
                 }
 
                 bool isCharacterMatched = false;
-                foreach (KeyValuePair<string, CharacterData> kv in _talkTargetsById)
+                foreach (KeyValuePair<string, CharacterData> kv in _currentTalkTargetsById)
                 {
                     CharacterData characterData = kv.Value;
                     if (characterData == null)
@@ -257,6 +230,7 @@ namespace Features.Narrative
                         continue;
                     }
 
+                    //TODO Find better solution to detect character selection choices
                     if (ContainsIgnoreCase(choice.Text, characterData.DisplayName) ||
                         ContainsIgnoreCase(choice.Text, characterData.Id))
                     {

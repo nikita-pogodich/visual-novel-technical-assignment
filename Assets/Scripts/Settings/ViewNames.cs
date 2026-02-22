@@ -16,6 +16,9 @@ namespace Settings
         public string ChoiceWindow { get; private set; } = "ChoiceWindow";
 
         [field: SerializeField]
+        public string EndingWindow { get; private set; } = "EndingWindow";
+
+        [field: SerializeField]
         public string ChoiceListItemView { get; private set; } = "ChoiceListItemView";
 
         [field: SerializeField]

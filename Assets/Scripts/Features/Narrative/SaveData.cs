@@ -7,6 +7,7 @@ namespace Features.Narrative
         public string ActiveCharacterId { get; set; }
         public string SpeakerKey { get; set; }
         public string BackgroundKey { get; set; }
+        public string EndingKey { get; set; }
         public string LineText { get; set; }
         public string NarrativeStateJson { get; set; }
 

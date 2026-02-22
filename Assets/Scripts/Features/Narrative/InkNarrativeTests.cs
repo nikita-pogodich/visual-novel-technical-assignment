@@ -22,65 +22,65 @@ namespace Features.Narrative
             var narrativeModel = new NarrativeModel(new[] {c1, c2}, narrative);
 
             narrativeModel.StartNewStory(compiledInkJson.text);
-            Print(narrativeModel.GetSnapshot());
+            Print(narrativeModel);
 
             narrativeModel.StartConversation("char1");
-            Print(narrativeModel.GetSnapshot());
+            Print(narrativeModel);
 
             narrativeModel.Continue();
-            Print(narrativeModel.GetSnapshot());
+            Print(narrativeModel);
 
             narrativeModel.Continue();
-            Print(narrativeModel.GetSnapshot());
+            Print(narrativeModel);
 
             ChooseByOrder(narrativeModel, 2);
-            Print(narrativeModel.GetSnapshot());
+            Print(narrativeModel);
 
             narrativeModel.StartConversation("char2");
-            Print(narrativeModel.GetSnapshot());
+            Print(narrativeModel);
 
             narrativeModel.Continue();
-            Print(narrativeModel.GetSnapshot());
+            Print(narrativeModel);
 
             narrativeModel.Continue();
-            Print(narrativeModel.GetSnapshot());
+            Print(narrativeModel);
 
             ChooseByOrder(narrativeModel, 1);
-            Print(narrativeModel.GetSnapshot());
+            Print(narrativeModel);
         }
 
-        private void ChooseByOrder(NarrativeModel game, int order)
+        private void ChooseByOrder(NarrativeModel narrativeModel, int order)
         {
-            DialogueSnapshot snapshot = game.GetSnapshot();
-            if (snapshot.Choices == null || snapshot.Choices.Count == 0)
+            if (narrativeModel.CurrentChoices == null || narrativeModel.CurrentChoices.Count == 0)
             {
                 throw new InvalidOperationException("No choices available to pick.");
             }
 
             int index = order - 1;
-            if (index < 0 || index >= snapshot.Choices.Count)
+            if (index < 0 || index >= narrativeModel.CurrentChoices.Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(order), "Choice order out of range.");
             }
 
-            game.Choose(snapshot.Choices[index].Index);
+            narrativeModel.Choose(narrativeModel.CurrentChoices[index].Index);
         }
 
-        private void Print(DialogueSnapshot snapshot)
+        private void Print(NarrativeModel narrativeModel)
         {
             Debug.Log("<color=green>=== SNAPSHOT ===</color>");
-            Debug.Log("Mode: " + snapshot.Mode);
-            Debug.Log("ActiveCharacter: " + (string.IsNullOrEmpty(snapshot.ActiveCharacterId) ? "none" : snapshot.ActiveCharacterId));
-            Debug.Log("SpeakerKey: " + (snapshot.SpeakerKey ?? "null"));
-            Debug.Log("BackgroundKey: " + (snapshot.BackgroundKey ?? "null"));
-            Debug.Log("Line: " + (snapshot.LineText ?? "null"));
+            Debug.Log("Mode: " + narrativeModel.CurrentMode);
+            Debug.Log("ActiveCharacter: " + (string.IsNullOrEmpty(narrativeModel.ActiveCharacterId) ? "none" : narrativeModel.ActiveCharacterId));
+            Debug.Log("SpeakerKey: " + (narrativeModel.CurrentSpeakerKey ?? "null"));
+            Debug.Log("BackgroundKey: " + (narrativeModel.CurrentBackgroundKey ?? "null"));
+            Debug.Log("EndingKey: " + (narrativeModel.CurrentEndingKey ?? "null"));
+            Debug.Log("Line: " + (narrativeModel.CurrentLineText ?? "null"));
 
-            if (snapshot.Choices != null && snapshot.Choices.Count > 0)
+            if (narrativeModel.CurrentChoices != null && narrativeModel.CurrentChoices.Count > 0)
             {
                 Debug.Log("Choices:");
-                for (int i = 0; i < snapshot.Choices.Count; i++)
+                for (int i = 0; i < narrativeModel.CurrentChoices.Count; i++)
                 {
-                    Debug.Log("  [" + snapshot.Choices[i].Index + "] " + snapshot.Choices[i].Text);
+                    Debug.Log("  [" + narrativeModel.CurrentChoices[i].Index + "] " + narrativeModel.CurrentChoices[i].Text);
                 }
             }
             else
@@ -88,10 +88,10 @@ namespace Features.Narrative
                 Debug.Log("Choices: none");
             }
 
-            if (snapshot.TalkTargetsById != null && snapshot.TalkTargetsById.Count > 0)
+            if (narrativeModel.CurrentTalkTargetsById != null && narrativeModel.CurrentTalkTargetsById.Count > 0)
             {
                 Debug.Log("TalkTargets:");
-                foreach (CharacterData snapshotTalkTarget in snapshot.TalkTargetsById.Values)
+                foreach (CharacterData snapshotTalkTarget in narrativeModel.CurrentTalkTargetsById.Values)
                 {
                     Debug.Log("  [" + snapshotTalkTarget.Id + "] " + snapshotTalkTarget.DisplayName);
                 }

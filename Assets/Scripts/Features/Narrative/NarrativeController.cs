@@ -4,6 +4,7 @@ using Core.ResourcesManager;
 using Core.ViewProvider;
 using Core.WindowManager;
 using Features.DialogueWindow;
+using Features.EndingScreenWindow;
 using Features.SaveLoad;
 using R3;
 using Settings;
@@ -96,9 +97,9 @@ namespace Features.Narrative
             }
         }
 
-        public void EnableCharacterSelection(DialogueSnapshot dialogueSnapshot)
+        public void EnableCharacterSelection()
         {
-            foreach (CharacterData dialogueSnapshotTalkTarget in dialogueSnapshot.TalkTargetsById.Values)
+            foreach (CharacterData dialogueSnapshotTalkTarget in _narrativeModel.CurrentTalkTargetsById.Values)
             {
                 var characterView = _viewProvider.Get<ICharacterView>(_localSettings.ViewNames.CharacterView);
                 _characterSelectionView.AddCharacter(characterView);
@@ -131,6 +132,19 @@ namespace Features.Narrative
             }
         }
 
+        public void ShowEndingScreen()
+        {
+            _windowManager.HideAllWindows();
+            _windowManager.ShowWindowAsync<IEndingWindowView, EndingWindowModel>(
+                _localSettings.ViewNames.EndingWindow,
+                beforeShow: OnBeforeEndingWindowShow);
+        }
+
+        private void OnBeforeEndingWindowShow(EndingWindowModel endingWindowModel)
+        {
+            endingWindowModel.UpdateModel(_narrativeModel.CurrentEndingKey, _narrativeModel.CurrentLineText);
+        }
+
         private void OnQuickSave(InputAction.CallbackContext callbackContext)
         {
             if (callbackContext.phase == InputActionPhase.Performed)
@@ -152,14 +166,17 @@ namespace Features.Narrative
         {
             _windowManager.HideAllWindows();
 
-            DialogueSnapshot dialogueSnapshot = _narrativeModel.GetSnapshot();
-            if (dialogueSnapshot.Mode == WorldMode.CharacterSelect)
+            switch (_narrativeModel.CurrentMode)
             {
-                EnableCharacterSelection(dialogueSnapshot);
-            }
-            else
-            {
-                ShowDialogueWindow();
+                case WorldMode.CharacterSelect:
+                    EnableCharacterSelection();
+                    break;
+                case WorldMode.Ending:
+                    ShowEndingScreen();
+                    break;
+                default:
+                    ShowDialogueWindow();
+                    break;
             }
         }
 

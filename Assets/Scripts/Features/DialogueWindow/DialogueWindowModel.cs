@@ -8,14 +8,9 @@ namespace Features.DialogueWindow
     {
         public readonly ReactiveProperty<string> CurrentCharacterName = new();
         public readonly ReactiveProperty<string> CurrentDialogue = new();
+        public NarrativeModel NarrativeModel => _narrativeModel;
 
         private readonly NarrativeModel _narrativeModel;
-
-        public DialogueSnapshot CurrentDialogueSnapshot { get; private set; }
-
-        public bool HasConversationChoices =>
-            CurrentDialogueSnapshot.Choices.Count > 0 &&
-            CurrentDialogueSnapshot.Mode == WorldMode.InConversation;
 
         public DialogueWindowModel(NarrativeModel narrativeModel, int uniqueId) : base(uniqueId)
         {
@@ -30,18 +25,15 @@ namespace Features.DialogueWindow
 
         public void UpdateDialogue()
         {
-            DialogueSnapshot dialogueSnapshot = _narrativeModel.GetSnapshot();
-            CurrentDialogueSnapshot = dialogueSnapshot;
-
-            if (dialogueSnapshot.TalkTargetsById.TryGetValue(
-                    dialogueSnapshot.SpeakerKey,
+            if (_narrativeModel.CurrentTalkTargetsById.TryGetValue(
+                    _narrativeModel.CurrentSpeakerKey,
                     out CharacterData characterData) == false)
             {
                 return;
             }
 
             CurrentCharacterName.Value = characterData.DisplayName;
-            CurrentDialogue.Value = dialogueSnapshot.LineText;
+            CurrentDialogue.Value = _narrativeModel.CurrentLineText;
         }
     }
 }
