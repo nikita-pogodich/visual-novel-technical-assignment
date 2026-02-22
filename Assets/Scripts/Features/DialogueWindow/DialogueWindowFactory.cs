@@ -1,4 +1,5 @@
-﻿using Core.MVP;
+﻿using Core.ModelProvider;
+using Core.MVP;
 using Core.WindowManager;
 using Core.WindowViewProvider;
 using Cysharp.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace Features.DialogueWindow
         private readonly IWindowManager _windowManager;
         private readonly IWindowViewProvider _windowViewProvider;
         private readonly ILocalSettings _localSettings;
+        private readonly IModelProvider _modelProvider;
         private readonly NarrativeController _narrativeController;
         private readonly NarrativeModel _narrativeModel;
         private readonly ChoiceWindowModel _choiceWindowModel;
@@ -25,6 +27,7 @@ namespace Features.DialogueWindow
             IWindowManager windowManager,
             IWindowViewProvider windowViewProvider,
             ILocalSettings localSettings,
+            IModelProvider modelProvider,
             NarrativeController narrativeController,
             NarrativeModel narrativeModel,
             ChoiceWindowModel choiceWindowModel)
@@ -32,6 +35,7 @@ namespace Features.DialogueWindow
             _windowManager = windowManager;
             _windowViewProvider = windowViewProvider;
             _localSettings = localSettings;
+            _modelProvider = modelProvider;
             _narrativeController = narrativeController;
             _narrativeModel = narrativeModel;
             _choiceWindowModel = choiceWindowModel;
@@ -39,18 +43,17 @@ namespace Features.DialogueWindow
 
         public async UniTask<IWindowPresenter> CreateAsync()
         {
-            //TODO: Get MainMenuWindowModel from ModelProvider
-            var model = new DialogueWindowModel(_narrativeModel, 0);
-            var dialogueWindowView = await _windowViewProvider.GetAsync<IDialogueWindowView>(ViewName, WindowType.Main);
-            var dialogueWindowPresenter = new DialogueWindowPresenter(
+            var model = new DialogueWindowModel(_narrativeModel, _modelProvider.GetUniqueId());
+            var view = await _windowViewProvider.GetAsync<IDialogueWindowView>(ViewName, WindowType.Main);
+            var presenter = new DialogueWindowPresenter(
                 _windowManager, 
                 _localSettings,
                 _narrativeController,
                 _choiceWindowModel);
 
-            dialogueWindowPresenter.Init(dialogueWindowView, model);
+            presenter.Init(view, model);
 
-            return dialogueWindowPresenter;
+            return presenter;
         }
     }
 }

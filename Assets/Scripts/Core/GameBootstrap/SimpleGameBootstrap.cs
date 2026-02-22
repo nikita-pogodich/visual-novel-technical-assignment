@@ -5,6 +5,7 @@ using Core.SaveStore;
 using Cysharp.Threading.Tasks;
 using Features.ChoiceWindow;
 using Features.DialogueWindow;
+using Features.EndingScreenWindow;
 using Features.MainMenu;
 using Features.Narrative;
 using Features.SaveLoad;
@@ -100,11 +101,20 @@ namespace Core.GameBootstrap
                 _windowManager,
                 windowViewProvider,
                 _localSettings,
+                _modelProvider,
                 _narrativeController,
                 narrativeModel,
                 choiceWindowModel);
 
             _windowManager.RegisterWindowFactory(dialogueWindowFactory);
+
+            var endingWindowFactory = new EndingWindowFactory(
+                _windowManager,
+                windowViewProvider,
+                _localSettings,
+                _modelProvider);
+
+            _windowManager.RegisterWindowFactory(endingWindowFactory);
 
             ShowStartWindowAsync().Forget();
         }

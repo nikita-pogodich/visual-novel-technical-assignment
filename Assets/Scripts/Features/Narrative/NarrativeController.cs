@@ -4,6 +4,7 @@ using Core.ResourcesManager;
 using Core.ViewProvider;
 using Core.WindowManager;
 using Features.DialogueWindow;
+using Features.EndingScreenWindow;
 using Features.SaveLoad;
 using R3;
 using Settings;
@@ -131,6 +132,20 @@ namespace Features.Narrative
             }
         }
 
+        public void ShowEndingScreen()
+        {
+            _windowManager.HideAllWindows();
+            _windowManager.ShowWindowAsync<IEndingWindowView, EndingWindowModel>(
+                _localSettings.ViewNames.EndingWindow,
+                beforeShow: OnBeforeEndingWindowShow);
+        }
+
+        private void OnBeforeEndingWindowShow(EndingWindowModel endingWindowModel)
+        {
+            DialogueSnapshot dialogueSnapshot = _narrativeModel.GetSnapshot();
+            endingWindowModel.UpdateModel(dialogueSnapshot.EndingKey, dialogueSnapshot.LineText);
+        }
+
         private void OnQuickSave(InputAction.CallbackContext callbackContext)
         {
             if (callbackContext.phase == InputActionPhase.Performed)
@@ -153,13 +168,17 @@ namespace Features.Narrative
             _windowManager.HideAllWindows();
 
             DialogueSnapshot dialogueSnapshot = _narrativeModel.GetSnapshot();
-            if (dialogueSnapshot.Mode == WorldMode.CharacterSelect)
+            switch (dialogueSnapshot.Mode)
             {
-                EnableCharacterSelection(dialogueSnapshot);
-            }
-            else
-            {
-                ShowDialogueWindow();
+                case WorldMode.CharacterSelect:
+                    EnableCharacterSelection(dialogueSnapshot);
+                    break;
+                case WorldMode.Ending:
+                    ShowEndingScreen();
+                    break;
+                default:
+                    ShowDialogueWindow();
+                    break;
             }
         }
 

@@ -79,12 +79,16 @@ VAR first_speaker = ""   // "c1" or "c2"
 
 === good_ending ===
 # bg:ending_good
+# mode:ending
+# ending:good
 # speaker:system
 GOOD ENDING: You did (C1: choice 2) first, then (C2: choice 1).
 -> END
 
 === bad_ending ===
 # bg:ending_bad
+# mode:ending
+# ending:bad
 # speaker:system
 BAD ENDING: Any other sequence/choices fails.
 -> END

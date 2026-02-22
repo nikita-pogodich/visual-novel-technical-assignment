@@ -13,10 +13,6 @@ namespace Features.DialogueWindow
 
         public DialogueSnapshot CurrentDialogueSnapshot { get; private set; }
 
-        public bool HasConversationChoices =>
-            CurrentDialogueSnapshot.Choices.Count > 0 &&
-            CurrentDialogueSnapshot.Mode == WorldMode.InConversation;
-
         public DialogueWindowModel(NarrativeModel narrativeModel, int uniqueId) : base(uniqueId)
         {
             _narrativeModel = narrativeModel;

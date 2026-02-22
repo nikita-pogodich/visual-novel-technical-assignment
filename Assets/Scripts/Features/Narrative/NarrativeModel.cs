@@ -14,6 +14,7 @@ namespace Features.Narrative
         public string ActiveCharacter { get; private set; }
         public string CurrentSpeakerKey { get; private set; }
         public string CurrentBackgroundKey { get; private set; }
+        public string CurrentEndingKey { get; private set; }
         public string CurrentLineText { get; private set; }
         public string NarrativeStateJson { get; private set; }
 
@@ -46,6 +47,7 @@ namespace Features.Narrative
                 ActiveCharacter,
                 CurrentSpeakerKey,
                 CurrentBackgroundKey,
+                CurrentEndingKey,
                 CurrentLineText,
                 _choices,
                 _talkTargetsById
@@ -63,6 +65,7 @@ namespace Features.Narrative
 
             _narrativeEngine.ChoosePath(target.InkEntryPath);
             StepUntilLineOrChoice();
+            StepUntilLineOrChoice();
         }
 
         public void Continue()
@@ -76,15 +79,10 @@ namespace Features.Narrative
             StepUntilLineOrChoice();
         }
 
-        private void EnterCharacterSelect(bool preserveLine)
+        private void EnterCharacterSelect()
         {
             Mode = WorldMode.CharacterSelect;
             ActiveCharacter = null;
-
-            if (!preserveLine)
-            {
-                CurrentLineText = null;
-            }
 
             _choices.Clear();
         }
@@ -98,12 +96,11 @@ namespace Features.Narrative
             {
                 ApplyChoicesFromNarrativeEngine(choices);
 
-                if (LooksLikeCharacterSelectChoices(choices))
+                if (HasCharacterSelectionChoices(choices))
                 {
                     SetMode(WorldMode.CharacterSelect);
                 }
 
-                CaptureRuntimeState();
                 return;
             }
 
@@ -116,7 +113,7 @@ namespace Features.Narrative
                 }
 
                 TagEffects effects = InkTagParser.Parse(line.Tags);
-                ApplyTagEffects(effects.SpeakerKey, effects.BackgroundKey);
+                ApplyTagEffects(effects.SpeakerKey, effects.BackgroundKey, effects.EndingKey);
                 ApplyModeFromTags(effects.Mode);
                 ApplyLine(line.Text);
 
@@ -125,24 +122,16 @@ namespace Features.Narrative
                 {
                     ApplyChoicesFromNarrativeEngine(choices);
 
-                    if (LooksLikeCharacterSelectChoices(choices))
+                    if (HasCharacterSelectionChoices(choices))
                     {
                         SetMode(WorldMode.CharacterSelect);
                     }
                 }
 
-                bool noChoices = choices == null || choices.Count == 0;
-                if (!_narrativeEngine.CanContinue && noChoices)
-                {
-                    EnterCharacterSelect(preserveLine: true);
-                }
-
-                CaptureRuntimeState();
                 return;
             }
 
-            EnterCharacterSelect(preserveLine: false);
-            CaptureRuntimeState();
+            EnterCharacterSelect();
         }
 
         private void ApplyChoicesFromNarrativeEngine(IReadOnlyList<NarrativeChoice> choicesFromNarrativeEngine)
@@ -155,11 +144,6 @@ namespace Features.Narrative
             }
 
             ApplyChoices(choices);
-        }
-
-        private void CaptureRuntimeState()
-        {
-            CaptureNarrativeState(_narrativeEngine.GetStateJson());
         }
 
         public void BeginConversation(string characterId)
@@ -192,7 +176,7 @@ namespace Features.Narrative
             }
         }
 
-        public void ApplyTagEffects(string speakerKey, string backgroundKey)
+        public void ApplyTagEffects(string speakerKey, string backgroundKey, string endingKey)
         {
             if (string.IsNullOrWhiteSpace(speakerKey) == false)
             {
@@ -202,6 +186,11 @@ namespace Features.Narrative
             if (string.IsNullOrWhiteSpace(backgroundKey) == false)
             {
                 CurrentBackgroundKey = backgroundKey;
+            }
+
+            if (string.IsNullOrWhiteSpace(endingKey) == false)
+            {
+                CurrentEndingKey = endingKey;
             }
         }
 
@@ -228,14 +217,10 @@ namespace Features.Narrative
             }
         }
 
-        private bool LooksLikeCharacterSelectChoices(IReadOnlyList<NarrativeChoice> engineChoices)
+        private bool HasCharacterSelectionChoices(IReadOnlyList<NarrativeChoice> engineChoices)
         {
-            if (engineChoices == null || engineChoices.Count == 0)
-            {
-                return false;
-            }
-
-            if (engineChoices.Count != _talkTargetsById.Count)
+            if (engineChoices == null || engineChoices.Count == 0 ||
+                engineChoices.Count != _talkTargetsById.Count)
             {
                 return false;
             }
@@ -257,6 +242,7 @@ namespace Features.Narrative
                         continue;
                     }
 
+                    //TODO Find better solution to detect character selection choices
                     if (ContainsIgnoreCase(choice.Text, characterData.DisplayName) ||
                         ContainsIgnoreCase(choice.Text, characterData.Id))
                     {

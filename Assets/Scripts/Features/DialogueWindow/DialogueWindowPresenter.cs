@@ -59,16 +59,23 @@ namespace Features.DialogueWindow
 
         private void OnDialogueWindowUpdated()
         {
-            if (Model.CurrentDialogueSnapshot.Mode == WorldMode.CharacterSelect)
+            switch (Model.CurrentDialogueSnapshot.Mode)
             {
-                SetShown(false);
-                _narrativeController.EnableCharacterSelection(Model.CurrentDialogueSnapshot);
-            }
-            else if (Model.HasConversationChoices)
-            {
-                _windowManager.ShowWindowAsync<IChoiceWindowView, ChoiceWindowModel>(
-                    _localSettings.ViewNames.ChoiceWindow,
-                    beforeShow: OnBeforeChoiceWindowShow);
+                case WorldMode.CharacterSelect:
+                    SetShown(false);
+                    _narrativeController.EnableCharacterSelection(Model.CurrentDialogueSnapshot);
+                    break;
+                case WorldMode.InConversation:
+                    if (Model.CurrentDialogueSnapshot.Choices.Count > 0)
+                    {
+                        _windowManager.ShowWindowAsync<IChoiceWindowView, ChoiceWindowModel>(
+                            _localSettings.ViewNames.ChoiceWindow,
+                            beforeShow: OnBeforeChoiceWindowShow);
+                    }
+                    break;
+                case WorldMode.Ending:
+                    _narrativeController.ShowEndingScreen();
+                    break;
             }
         }
 

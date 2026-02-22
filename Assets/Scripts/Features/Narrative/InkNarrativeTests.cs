@@ -73,6 +73,7 @@ namespace Features.Narrative
             Debug.Log("ActiveCharacter: " + (string.IsNullOrEmpty(snapshot.ActiveCharacterId) ? "none" : snapshot.ActiveCharacterId));
             Debug.Log("SpeakerKey: " + (snapshot.SpeakerKey ?? "null"));
             Debug.Log("BackgroundKey: " + (snapshot.BackgroundKey ?? "null"));
+            Debug.Log("EndingKey: " + (snapshot.EndingKey ?? "null"));
             Debug.Log("Line: " + (snapshot.LineText ?? "null"));
 
             if (snapshot.Choices != null && snapshot.Choices.Count > 0)

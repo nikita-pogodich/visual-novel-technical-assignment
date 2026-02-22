@@ -7,12 +7,14 @@ namespace Features.Narrative
     {
         public string SpeakerKey { get; private set; }
         public string BackgroundKey { get; private set; }
+        public string EndingKey { get; private set; }
         public WorldMode? Mode { get; private set; }
 
-        public TagEffects(string speakerKey, string backgroundKey, WorldMode? mode)
+        public TagEffects(string speakerKey, string backgroundKey, string endingKey, WorldMode? mode)
         {
             SpeakerKey = speakerKey;
             BackgroundKey = backgroundKey;
+            EndingKey = endingKey;
             Mode = mode;
         }
     }
@@ -30,11 +32,12 @@ namespace Features.Narrative
         {
             string speaker = null;
             string bg = null;
+            string ending = null;
             WorldMode? mode = null;
 
             if (tags == null)
             {
-                return new TagEffects(null, null, null);
+                return new TagEffects(null, null, null, null);
             }
 
             for (int i = 0; i < tags.Count; i++)
@@ -60,13 +63,17 @@ namespace Features.Narrative
                 {
                     bg = val;
                 }
+                else if (key == "ending" || key == "end")
+                {
+                    ending = val;
+                }
                 else if (key == "mode")
                 {
                     mode = ParseMode(val);
                 }
             }
 
-            return new TagEffects(speaker, bg, mode);
+            return new TagEffects(speaker, bg, ending, mode);
         }
 
         private static WorldMode? ParseMode(string value)
@@ -76,14 +83,24 @@ namespace Features.Narrative
             string v = value.Trim().ToLowerInvariant();
 
             if (v == "characterselect" || v == "character_select" || v == "character-select" || v == "select" || v == "hub")
+            {
                 return WorldMode.CharacterSelect;
+            }
 
             if (v == "inconversation" || v == "in_conversation" || v == "in-conversation" || v == "conversation" || v == "dialogue")
+            {
                 return WorldMode.InConversation;
+            }
 
-            WorldMode parsed;
-            if (Enum.TryParse(value, ignoreCase: true, result: out parsed))
+            if (v == "ending" || v == "end")
+            {
+                return WorldMode.Ending;
+            }
+
+            if (Enum.TryParse(value, ignoreCase: true, result: out WorldMode parsed))
+            {
                 return parsed;
+            }
 
             return null;
         }
