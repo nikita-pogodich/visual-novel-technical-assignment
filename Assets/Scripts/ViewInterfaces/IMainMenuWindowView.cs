@@ -8,5 +8,6 @@ namespace ViewInterfaces
         Observable<Unit> NewGame { get; }
         Observable<Unit> LoadGame { get; }
         Observable<Unit> ExitGame { get; }
+        void SetLoadButtonShown(bool isShown);
     }
 }

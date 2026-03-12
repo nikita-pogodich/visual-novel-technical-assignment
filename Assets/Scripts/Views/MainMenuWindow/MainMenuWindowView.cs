@@ -31,6 +31,11 @@ namespace Views.MainMenuWindow
             SetCanvasEnabled(isShown);
         }
 
+        public void SetLoadButtonShown(bool isShown)
+        {
+            _loadGameButton.gameObject.SetActive(isShown);
+        }
+
         protected override void OnInit(ref DisposableBuilder disposableBuilder)
         {
             _newGameButton.OnClickAsObservable().Subscribe(OnNewGame).AddTo(ref disposableBuilder);

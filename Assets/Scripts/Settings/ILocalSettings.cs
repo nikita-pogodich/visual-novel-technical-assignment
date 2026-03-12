@@ -5,5 +5,6 @@
         IViewNames ViewNames { get; }
         ICharacterSettings CharacterSettings { get; }
         IResourceNames ResourceNames { get; }
+        IGameSettings GameSettings { get; }
     }
 }

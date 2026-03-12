@@ -1,20 +1,37 @@
+using System;
+
 namespace Features.Narrative
 {
+    [Serializable]
     public class SaveData
     {
-        public int Version { get; set; }
-        public string Mode { get; set; }
-        public string ActiveCharacterId { get; set; }
-        public string SpeakerKey { get; set; }
-        public string BackgroundKey { get; set; }
-        public string EndingKey { get; set; }
-        public string LineText { get; set; }
-        public string NarrativeStateJson { get; set; }
+        public int Version;
+        public string Mode;
+        public string ActiveCharacterId;
+        public string SpeakerKey;
+        public string BackgroundKey;
+        public string EndingKey;
+        public string LineText;
+        public string NarrativeStateJson;
 
-        public SaveData()
+        public SaveData(
+            int version,
+            string mode,
+            string activeCharacterId,
+            string speakerKey,
+            string backgroundKey,
+            string endingKey,
+            string lineText,
+            string narrativeStateJson)
         {
-            Version = 1;
-            Mode = "CharacterSelect";
+            Version = version;
+            Mode = mode;
+            ActiveCharacterId = activeCharacterId;
+            SpeakerKey = speakerKey;
+            BackgroundKey = backgroundKey;
+            EndingKey = endingKey;
+            LineText = lineText;
+            NarrativeStateJson = narrativeStateJson;
         }
     }
 }

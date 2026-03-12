@@ -18,8 +18,12 @@ namespace Settings
         [SerializeField]
         public CharacterSettings _characterSettings;
 
+        [SerializeField]
+        private GameSettings _gameSettings;
+
         public IViewNames ViewNames => _viewNames;
         public ICharacterSettings CharacterSettings => _characterSettings;
         public IResourceNames ResourceNames => _resourceNames;
+        public IGameSettings GameSettings => _gameSettings;
     }
 }

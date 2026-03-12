@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using Core.ModelProvider;
-using Core.SaveStore;
+using Core.SaveSystem;
 using Cysharp.Threading.Tasks;
 using Features.ChoiceWindow;
 using Features.DialogueWindow;
@@ -27,6 +26,7 @@ namespace Core.GameBootstrap
         private readonly IModelProvider _modelProvider = new SimpleModelProvider();
         private readonly ResourcesManager.ResourcesManager _resourcesManager = new();
         private NarrativeController _narrativeController;
+        private ISaveSystem _saveSystem;
 
         private void Start()
         {
@@ -42,6 +42,8 @@ namespace Core.GameBootstrap
         private async UniTaskVoid InitAsync()
         {
             await _resourcesManager.InitializeAsync(destroyCancellationToken);
+
+            InitSaveSystem();
 
             var viewProvider = new ViewProvider.ViewProvider(_resourcesManager);
             var windowViewProvider = new WindowViewProvider.WindowViewProvider(
@@ -64,10 +66,7 @@ namespace Core.GameBootstrap
             var narrativeEngine = new InkNarrativeEngine();
             var narrativeModel = new NarrativeModel(allCharactersData, narrativeEngine);
 
-            string rootDir = Path.Combine(Application.persistentDataPath, "Saves");
-            ISaveStore saveStore = new JsonFileSaveStore(rootDir);
-
-            var saveLoadManager = new SaveLoadManager(narrativeModel, narrativeEngine, saveStore);
+            var saveLoadManager = new SaveLoadManager(narrativeModel, narrativeEngine, _saveSystem);
 
             _narrativeController = new NarrativeController(
                 viewProvider,
@@ -84,7 +83,8 @@ namespace Core.GameBootstrap
                 _narrativeController,
                 windowViewProvider,
                 _modelProvider,
-                _localSettings);
+                _localSettings,
+                _saveSystem);
 
             _windowManager.RegisterWindowFactory(mainMenuWindowFactory);
 
@@ -118,6 +118,16 @@ namespace Core.GameBootstrap
 
             ShowStartWindowAsync().Forget();
         }
+
+        private void InitSaveSystem()
+        {
+            string savePath = System.IO.Path.Combine(
+                Application.persistentDataPath,
+                _localSettings.GameSettings.SavesFolderName);
+
+            _saveSystem = new JsonSlotSaveSystem(savePath, new NewtonsoftJsonSerializer());
+        }
+
 
         private async UniTask ShowStartWindowAsync()
         {

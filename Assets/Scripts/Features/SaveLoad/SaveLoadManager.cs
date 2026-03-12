@@ -1,6 +1,6 @@
-using Core.SaveStore;
+using System;
+using Core.SaveSystem;
 using Features.Narrative;
-using Newtonsoft.Json;
 
 namespace Features.SaveLoad
 {
@@ -8,44 +8,54 @@ namespace Features.SaveLoad
     {
         private readonly NarrativeModel _narrativeModel;
         private readonly INarrativeEngine _narrative;
-        private readonly ISaveStore _store;
+        private readonly ISaveSystem _saveSystem;
 
-        public SaveLoadManager(NarrativeModel narrativeModel, INarrativeEngine narrative, ISaveStore store)
+        public SaveLoadManager(NarrativeModel narrativeModel, INarrativeEngine narrative, ISaveSystem saveSystem)
         {
             _narrativeModel = narrativeModel;
             _narrative = narrative;
-            _store = store;
+            _saveSystem = saveSystem;
         }
 
         public void Save(string slotId)
         {
             _narrativeModel.CaptureNarrativeState(_narrative.GetStateJson());
 
-            SaveData saveData = SaveLoadUseCases.ToSaveData(_narrativeModel);
-            string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);
-            _store.Save(slotId, json);
+            var saveData = new SaveData(
+                version: 1,
+                _narrativeModel.CurrentMode.ToString(),
+                _narrativeModel.ActiveCharacterId,
+                _narrativeModel.CurrentSpeakerKey,
+                _narrativeModel.CurrentBackgroundKey,
+                _narrativeModel.CurrentEndingKey,
+                _narrativeModel.CurrentLineText,
+                _narrativeModel.NarrativeStateJson);
+
+            _saveSystem.Save(slotId, saveData);
         }
 
         public bool Load(string slotId)
         {
-            string json = _store.Load(slotId);
-
-            SaveData saveData;
-            try
-            {
-                saveData = JsonConvert.DeserializeObject<SaveData>(json);
-            }
-            catch
+            if (_saveSystem.TryLoad(slotId, out SaveData saveData) == false)
             {
                 return false;
             }
 
-            if (saveData == null)
+            if (Enum.TryParse(saveData.Mode, out WorldMode mode) == false)
             {
-                return false;
+                mode = WorldMode.CharacterSelect;
             }
 
-            SaveLoadUseCases.ApplySaveData(_narrativeModel, saveData);
+            if (mode == WorldMode.InConversation && string.IsNullOrWhiteSpace(saveData.ActiveCharacterId) == false)
+            {
+                _narrativeModel.BeginConversation(saveData.ActiveCharacterId);
+            }
+
+            _narrativeModel.ApplyTagEffects(saveData.SpeakerKey, saveData.BackgroundKey, saveData.EndingKey);
+            _narrativeModel.ApplyLine(saveData.LineText);
+            _narrativeModel.CaptureNarrativeState(saveData.NarrativeStateJson);
+
+            _narrativeModel.ApplyChoices(null);
 
             if (string.IsNullOrWhiteSpace(saveData.NarrativeStateJson) == false)
             {
